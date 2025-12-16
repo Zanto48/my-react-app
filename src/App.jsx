@@ -15,7 +15,6 @@ import FamilyHealth from './pages/FamilyHealth';
 import './index.css';
 
 // Protected Route Component
-console.log("memek")
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
