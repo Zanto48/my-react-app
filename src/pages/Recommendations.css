@@ -1,0 +1,268 @@
+.recommendations-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+    padding-bottom: 80px;
+}
+
+.rec-loading {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+
+.rec-loading .spinner {
+    width: 40px;
+    height: 40px;
+    color: #667eea;
+    animation: spin 1s linear infinite;
+}
+
+.header-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-icon svg {
+    width: 20px;
+    height: 20px;
+    color: white;
+}
+
+.rec-container {
+    padding: 24px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.empty-state svg {
+    width: 48px;
+    height: 48px;
+    color: #a0aec0;
+    margin-bottom: 16px;
+}
+
+.empty-state h3 {
+    font-size: 20px;
+    color: #2d3748;
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    color: #718096;
+    margin-bottom: 24px;
+}
+
+.cta-btn {
+    display: inline-flex;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.rec-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.rec-card {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.rec-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 12px;
+}
+
+.rec-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a202c;
+}
+
+.rec-category {
+    font-size: 12px;
+    padding: 4px 10px;
+    background: #edf2f7;
+    color: #718096;
+    border-radius: 20px;
+    text-transform: capitalize;
+}
+
+.rec-desc {
+    color: #4a5568;
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.rec-reason {
+    font-size: 14px;
+    color: #667eea;
+    background: #f0f4ff;
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+
+.rec-section {
+    margin-top: 16px;
+}
+
+.rec-section h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 10px;
+}
+
+.rec-section.foods h4 {
+    color: #38a169;
+}
+
+.rec-section.avoid h4 {
+    color: #e53e3e;
+}
+
+.item-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tag {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.tag.good {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.tag.bad {
+    background: #fed7d7;
+    color: #742a2a;
+}
+
+.exercise-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.exercise-meta span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #4a5568;
+}
+
+.activity-list,
+.tips-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.activity-list li,
+.tips-list li {
+    padding: 8px 0;
+    padding-left: 20px;
+    position: relative;
+    color: #4a5568;
+    font-size: 14px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.activity-list li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #48bb78;
+}
+
+.tips-list li:before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #667eea;
+}
+
+.rec-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 24px;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #718096;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.nav-item:hover {
+    background: #f7fafc;
+}
+
+.nav-item.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
