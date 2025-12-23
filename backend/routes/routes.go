@@ -16,18 +16,23 @@ func SetupRoutes(r *gin.Engine) {
 	// Global rate limiting (100 requests per minute)
 	r.Use(middleware.RateLimitMiddleware(100, time.Minute))
 
-	// API group
+	// ==========================================
+	// 1. AUTH ROUTES (LANGSUNG DI BAWAH 'r')
+	// ==========================================
+	// Ini agar alamatnya menjadi "/auth/login", bukan "/api/auth/login"
+	auth := r.Group("/auth")
+	auth.Use(middleware.StrictRateLimitMiddleware())
+	{
+		auth.POST("/register", handlers.Register)
+		auth.POST("/login", handlers.Login)
+		auth.POST("/reset-password", handlers.ResetPassword)
+	}
+
+	// ==========================================
+	// 2. API ROUTES (DATA LAINNYA TETAP DI '/api')
+	// ==========================================
 	api := r.Group("/api")
 	{
-		// Public routes (no auth required) with stricter rate limiting
-		auth := api.Group("/auth")
-		auth.Use(middleware.StrictRateLimitMiddleware()) // 10 requests per minute for auth
-		{
-			auth.POST("/register", handlers.Register)
-			auth.POST("/login", handlers.Login)
-			auth.POST("/reset-password", handlers.ResetPassword)
-		}
-
 		// Articles routes (public)
 		articles := api.Group("/articles")
 		{
@@ -135,4 +140,3 @@ func SetupRoutes(r *gin.Engine) {
 		c.JSON(200, gin.H{"status": "ok", "message": "Health Tracker API is running"})
 	})
 }
-
