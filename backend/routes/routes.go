@@ -13,13 +13,12 @@ func SetupRoutes(r *gin.Engine) {
 	// CORS middleware
 	r.Use(middleware.CORSMiddleware())
 
-	// Global rate limiting (100 requests per minute)
+	// Global rate limiting
 	r.Use(middleware.RateLimitMiddleware(100, time.Minute))
 
 	// ==========================================
-	// 1. AUTH ROUTES (LANGSUNG DI BAWAH 'r')
+	// 1. AUTH ROUTES
 	// ==========================================
-	// Ini agar alamatnya menjadi "/auth/login", bukan "/api/auth/login"
 	auth := r.Group("/auth")
 	auth.Use(middleware.StrictRateLimitMiddleware())
 	{
@@ -29,11 +28,12 @@ func SetupRoutes(r *gin.Engine) {
 	}
 
 	// ==========================================
-	// 2. API ROUTES (DATA LAINNYA TETAP DI '/api')
+	// 2. MAIN ROUTES (PENTING: Ubah /api menjadi /)
 	// ==========================================
-	api := r.Group("/api")
+	// Dengan mengganti "/api" menjadi "/", fitur health bisa diakses langsung
+	api := r.Group("/")
 	{
-		// Articles routes (public)
+		// Articles routes
 		articles := api.Group("/articles")
 		{
 			articles.GET("", handlers.GetArticles)
@@ -42,7 +42,7 @@ func SetupRoutes(r *gin.Engine) {
 			articles.GET("/:id", handlers.GetArticle)
 		}
 
-		// Protected routes (auth required)
+		// Protected routes
 		protected := api.Group("")
 		protected.Use(middleware.AuthMiddleware())
 		{
@@ -50,7 +50,7 @@ func SetupRoutes(r *gin.Engine) {
 			protected.GET("/auth/me", handlers.GetCurrentUser)
 			protected.PUT("/auth/profile", handlers.UpdateProfile)
 
-			// Health data routes
+			// Health data routes (Ini yang error 404 tadi)
 			health := protected.Group("/health")
 			{
 				health.POST("", handlers.CreateHealthData)
