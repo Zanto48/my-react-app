@@ -14,6 +14,8 @@ func CORSMiddleware() gin.HandlerFunc {
 		"http://localhost:5174",
 		"http://localhost:3000",
 		"http://127.0.0.1:5173",
+		"https://sleeps-amendments-upgrades-fits.trycloudflare.com",
+		"https://satisfied-kent-hat-alignment.trycloudflare.com",
 	}
 
 	// Add production frontend URL if set
@@ -22,11 +24,11 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 
 	config := cors.Config{
-		AllowOrigins:     allowedOrigins,
+		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
+		AllowCredentials: false,
 	}
 	return cors.New(config)
 }

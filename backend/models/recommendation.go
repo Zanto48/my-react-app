@@ -38,3 +38,32 @@ type EmotionalRecommendation struct {
 	Tips           []string `json:"tips"`
 	Reason         string   `json:"reason"`
 }
+
+type MealPlan struct {
+	MealType      string   `json:"meal_type"` // breakfast, lunch, dinner, snack
+	Title         string   `json:"title"`
+	Foods         []string `json:"foods"`
+	Ingredients   []string `json:"ingredients,omitempty"`
+	Recipe        string   `json:"recipe,omitempty"`
+	Calories      string   `json:"calories,omitempty"`
+	Description   string   `json:"description"`
+	EstimatedCost string   `json:"estimated_cost,omitempty"` // Estimasi biaya dalam Rupiah
+}
+
+type DailyMenu struct {
+	Date               string     `json:"date"`
+	HealthTip          string     `json:"health_tip"`
+	Breakfast          MealPlan   `json:"breakfast"`
+	BreakfastAlt       []MealPlan `json:"breakfast_alt,omitempty"` // Alternative breakfast options
+	Lunch              MealPlan   `json:"lunch"`
+	LunchAlt           []MealPlan `json:"lunch_alt,omitempty"` // Alternative lunch options
+	Dinner             MealPlan   `json:"dinner"`
+	DinnerAlt          []MealPlan `json:"dinner_alt,omitempty"` // Alternative dinner options
+	Snacks             []MealPlan `json:"snacks"`
+	Drinks             []string   `json:"drinks"`
+	Fruits             []string   `json:"fruits"`
+	AvoidDrinks        []string   `json:"avoid_drinks,omitempty"`
+	AvoidFruits        []string   `json:"avoid_fruits,omitempty"`
+	TotalCalories      string     `json:"total_calories"`
+	TotalEstimatedCost string     `json:"total_estimated_cost,omitempty"` // Total estimasi biaya harian
+}

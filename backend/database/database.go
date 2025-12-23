@@ -33,6 +33,13 @@ func InitDatabase() {
 		&models.SymptomTemplate{},
 		&models.FamilyMember{},
 		&models.Recommendation{},
+		&models.Article{},
+		&models.Post{},
+		&models.Comment{},
+		&models.Like{},
+		&models.WaterIntake{},
+		&models.Goal{},
+		&models.Reminder{},
 	)
 
 	if err != nil {

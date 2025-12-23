@@ -1,64 +1,141 @@
-# Health Tracker
+# 🏥 Health Tracker - Live for Health
 
-Platform pelacakan kesehatan dengan fitur:
-- Dashboard dengan skor kesehatan & BMI
-- Tracking data kesehatan harian
-- Log gejala fisik & mental
-- Rekomendasi makanan, olahraga, aktivitas emosional
-- Family sharing dengan approval
+Aplikasi web untuk tracking kesehatan dengan fitur rekomendasi makanan, tracking aktivitas, dan manajemen keluarga.
 
-## Tech Stack
+---
 
-- **Frontend**: React + Vite
-- **Backend**: Go + Gin + SQLite
-- **Deploy**: Vercel (frontend) + Render (backend)
+## 📋 Prasyarat (Harus Diinstall)
 
-## Quick Start (Development)
+Pastikan komputer Anda sudah menginstall:
 
-### Backend
-```bash
-cd backend
-go mod tidy
-go run main.go  # http://localhost:8080
+| Software | Versi Minimum | Link Download |
+|----------|---------------|---------------|
+| **Node.js** | v18+ | [nodejs.org](https://nodejs.org) |
+| **Go** | v1.21+ | [go.dev/dl](https://go.dev/dl/) |
+| **Git** | Terbaru | [git-scm.com](https://git-scm.com/) |
+| **Cloudflared** | Opsional | [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/) |
+
+---
+
+## 🚀 Cara Menjalankan
+
+### 1. Clone/Download Project
+
+```powershell
+# Jika via Git
+git clone <URL_REPOSITORY>
+cd my-react-app
 ```
 
-### Frontend
-```bash
+Atau extract file ZIP ke folder yang diinginkan.
+
+---
+
+### 2. Setup Frontend
+
+```powershell
+# Masuk ke folder project
+cd my-react-app
+
+# Install dependencies
 npm install
-npm run dev     # http://localhost:5173
+
+# Jalankan development server
+npm run dev
 ```
 
-## Deploy to Production
+Frontend akan berjalan di: **http://localhost:5173**
 
-### 1. Push to GitHub
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git remote add origin https://github.com/YOUR_USERNAME/health-tracker.git
-git push -u origin main
+---
+
+### 3. Setup Backend
+
+Buka terminal baru (jangan tutup terminal frontend):
+
+```powershell
+# Masuk ke folder backend
+cd my-react-app/backend
+
+# Copy file environment
+copy .env.example .env
+
+# Download Go dependencies
+go mod download
+
+# Jalankan backend server
+go run main.go
 ```
 
-### 2. Deploy Backend (Render.com)
-1. Go to [render.com](https://render.com)
-2. New → Web Service → Connect GitHub repo
-3. Select `backend` directory
-4. Environment: Docker
-5. Add env vars: `FRONTEND_URL` = your Vercel URL
+Backend akan berjalan di: **http://localhost:8080**
 
-### 3. Deploy Frontend (Vercel)
-1. Go to [vercel.com](https://vercel.com)
-2. Import GitHub repo
-3. Add env var: `VITE_API_URL` = your Render backend URL + `/api`
-4. Deploy!
+---
 
-## Environment Variables
+## 🌐 Akses dari Luar (Opsional)
 
-### Backend (.env)
-- `PORT` - Server port (default: 8080)
-- `JWT_SECRET` - Secret key for JWT
-- `DATABASE_PATH` - SQLite file path
-- `FRONTEND_URL` - Frontend URL for CORS
+Untuk membuat web bisa diakses publik via internet:
 
-### Frontend (.env)
-- `VITE_API_URL` - Backend API URL
+```powershell
+# Terminal 1: Tunnel untuk Backend
+cloudflared tunnel --url http://localhost:8080
+
+# Terminal 2: Tunnel untuk Frontend
+cloudflared tunnel --url http://localhost:5173
+```
+
+URL publik akan muncul di terminal dengan format:
+```
+https://xxxxx-xxxxx.trycloudflare.com
+```
+
+---
+
+## 📁 Struktur Project
+
+```
+my-react-app/
+├── src/                    # Frontend React
+│   ├── components/         # Komponen UI
+│   ├── pages/              # Halaman aplikasi
+│   ├── contexts/           # React Context
+│   └── config/             # Konfigurasi API
+├── backend/                # Backend Go
+│   ├── handlers/           # API Handlers
+│   ├── models/             # Database Models
+│   ├── middleware/         # Auth Middleware
+│   ├── routes/             # Route definitions
+│   └── database/           # Database config
+├── package.json            # Frontend dependencies
+└── vite.config.js          # Vite configuration
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### Error: "npm not found"
+→ Install Node.js dari [nodejs.org](https://nodejs.org)
+
+### Error: "go not found"
+→ Install Go dari [go.dev](https://go.dev/dl/)
+
+### Error: Port sudah digunakan
+```powershell
+# Cek port 8080
+netstat -ano | findstr :8080
+
+# Kill process (ganti PID dengan ID dari command di atas)
+taskkill /PID <PID> /F
+```
+
+### Database error
+→ Hapus file `backend/health_tracker.db` dan jalankan ulang backend
+
+---
+
+## 📞 Kontak
+
+Jika ada pertanyaan, hubungi developer.
+
+---
+
+**Happy Coding! 🎉**

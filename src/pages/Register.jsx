@@ -42,11 +42,77 @@ const Register = () => {
 
     return (
         <div className="auth-container">
+            {/* Animated Background Elements */}
+            <div className="auth-bg-elements">
+                {/* Floating Particles */}
+                <div className="particle"></div>
+                <div className="particle"></div>
+                <div className="particle"></div>
+                <div className="particle"></div>
+                <div className="particle"></div>
+                <div className="particle"></div>
+                <div className="particle"></div>
+                <div className="particle"></div>
+                <div className="particle"></div>
+                <div className="particle"></div>
+                <div className="particle"></div>
+                <div className="particle"></div>
+
+                {/* Glowing Orbs */}
+                <div className="glow-orb"></div>
+                <div className="glow-orb"></div>
+                <div className="glow-orb"></div>
+                <div className="glow-orb"></div>
+                <div className="glow-orb"></div>
+
+                {/* Twinkling Stars */}
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+                <div className="star"></div>
+
+                {/* Waves */}
+                <div className="wave"></div>
+                <div className="wave"></div>
+
+                {/* Floating Circles */}
+                <div className="floating-circle"></div>
+                <div className="floating-circle"></div>
+                <div className="floating-circle"></div>
+                <div className="floating-circle"></div>
+                <div className="floating-circle"></div>
+
+                {/* Floating Health Bubbles */}
+                <div className="health-bubble"></div>
+                <div className="health-bubble"></div>
+                <div className="health-bubble"></div>
+                <div className="health-bubble"></div>
+                <div className="health-bubble"></div>
+                <div className="health-bubble"></div>
+                <div className="health-bubble"></div>
+                <div className="health-bubble"></div>
+
+                {/* DNA Helix Animation */}
+                <div className="dna-strand"></div>
+                <div className="dna-strand"></div>
+            </div>
+
             <div className="auth-card">
                 <div className="auth-header">
                     <div className="auth-logo">
                         <Heart className="logo-icon" />
-                        <span>HealthTracker</span>
+                        <span>Live for Health</span>
                     </div>
                     <h1>Buat Akun Baru</h1>
                     <p>Mulai perjalanan kesehatan Anda bersama kami</p>

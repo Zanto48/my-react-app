@@ -97,7 +97,7 @@ func GetDashboard(c *gin.Context) {
 	// Get recent symptoms (last 7 days)
 	var recentSymptoms []models.Symptom
 	weekAgo := time.Now().AddDate(0, 0, -7)
-	database.DB.Where("user_id = ? AND logged_at > ?", userID, weekAgo).Order("logged_at desc").Limit(5).Find(&recentSymptoms)
+	database.DB.Where("user_id = ? AND logged_at > ?", userID, weekAgo).Order("logged_at desc").Find(&recentSymptoms)
 
 	// Get weekly progress (last 7 records)
 	var weeklyProgress []models.HealthData

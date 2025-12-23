@@ -170,27 +170,30 @@ func RejectFamilyRequest(c *gin.Context) {
 // GetFamilyMemberHealth returns health data of a family member
 func GetFamilyMemberHealth(c *gin.Context) {
 	userID := c.GetUint("userID")
-	memberID, _ := strconv.ParseUint(c.Param("id"), 10, 32)
+	familyMemberID, _ := strconv.ParseUint(c.Param("id"), 10, 32)
 
-	// Check if user has permission to view
+	// Find family member record by its ID
 	var familyMember models.FamilyMember
-	if result := database.DB.Where("owner_id = ? AND member_user_id = ? AND status = ? AND can_view_health = ?", 
-		userID, memberID, "approved", true).First(&familyMember); result.Error != nil {
+	if result := database.DB.Where("id = ? AND owner_id = ? AND status = ? AND can_view_health = ?", 
+		familyMemberID, userID, "approved", true).First(&familyMember); result.Error != nil {
 		utils.ErrorResponse(c, http.StatusForbidden, "You don't have permission to view this member's health")
 		return
 	}
 
+	// Get the actual member user ID from the family member record
+	memberUserID := familyMember.MemberUserID
+
 	// Get member info
 	var memberUser models.User
-	database.DB.First(&memberUser, memberID)
+	database.DB.First(&memberUser, memberUserID)
 
 	// Get latest health data
 	var latestHealth models.HealthData
-	database.DB.Where("user_id = ?", memberID).Order("record_date desc").First(&latestHealth)
+	database.DB.Where("user_id = ?", memberUserID).Order("record_date desc").First(&latestHealth)
 
 	// Get recent symptoms
 	var recentSymptoms []models.Symptom
-	database.DB.Where("user_id = ?", memberID).Order("logged_at desc").Limit(5).Find(&recentSymptoms)
+	database.DB.Where("user_id = ?", memberUserID).Order("logged_at desc").Limit(5).Find(&recentSymptoms)
 
 	response := models.FamilyHealthView{
 		MemberName:     memberUser.Name,

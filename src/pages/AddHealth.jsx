@@ -69,6 +69,21 @@ const AddHealth = () => {
 
     return (
         <div className="add-health-page">
+            {/* Animated Health Background */}
+            <div className="health-bg-elements">
+                {/* Floating Health Icons */}
+                <div className="health-particle">❤️</div>
+                <div className="health-particle">💪</div>
+                <div className="health-particle">🏃</div>
+                <div className="health-particle">🍎</div>
+                <div className="health-particle">💧</div>
+                <div className="health-particle">🧘</div>
+                {/* Pulse Rings */}
+                <div className="health-pulse"></div>
+                <div className="health-pulse"></div>
+                <div className="health-pulse"></div>
+            </div>
+
             <header className="page-header">
                 <Link to="/dashboard" className="back-btn">
                     <ArrowLeft size={20} />

@@ -10,33 +10,41 @@ func SeedData() {
 	var count int64
 	DB.Model(&models.SymptomTemplate{}).Count(&count)
 	
-	if count > 0 {
-		log.Println("Seed data already exists, skipping...")
-		return
+	if count == 0 {
+		log.Println("Seeding symptom templates...")
+
+		// Seed physical symptoms
+		for _, symptom := range models.PhysicalSymptoms {
+			DB.Create(&models.SymptomTemplate{
+				SymptomType: "physical",
+				SymptomName: symptom,
+				Description: "Gejala fisik: " + symptom,
+			})
+		}
+
+		// Seed mental symptoms
+		for _, symptom := range models.MentalSymptoms {
+			DB.Create(&models.SymptomTemplate{
+				SymptomType: "mental",
+				SymptomName: symptom,
+				Description: "Gejala mental: " + symptom,
+			})
+		}
+
+		// Seed recommendations
+		seedRecommendations()
 	}
 
-	log.Println("Seeding symptom templates...")
-
-	// Seed physical symptoms
-	for _, symptom := range models.PhysicalSymptoms {
-		DB.Create(&models.SymptomTemplate{
-			SymptomType: "physical",
-			SymptomName: symptom,
-			Description: "Gejala fisik: " + symptom,
-		})
+	// Seed articles
+	var articleCount int64
+	DB.Model(&models.Article{}).Count(&articleCount)
+	if articleCount == 0 {
+		log.Println("Seeding health articles...")
+		articles := models.GetSampleArticles()
+		for _, article := range articles {
+			DB.Create(&article)
+		}
 	}
-
-	// Seed mental symptoms
-	for _, symptom := range models.MentalSymptoms {
-		DB.Create(&models.SymptomTemplate{
-			SymptomType: "mental",
-			SymptomName: symptom,
-			Description: "Gejala mental: " + symptom,
-		})
-	}
-
-	// Seed recommendations
-	seedRecommendations()
 
 	log.Println("Seed data completed")
 }

@@ -143,3 +143,42 @@ func UpdateProfile(c *gin.Context) {
 
 	utils.SuccessResponse(c, http.StatusOK, "Profile updated", user)
 }
+
+// ResetPasswordRequest represents the request body for password reset
+type ResetPasswordRequest struct {
+	Email       string `json:"email" binding:"required,email"`
+	NewPassword string `json:"new_password" binding:"required,min=6"`
+}
+
+// ResetPassword resets user password by email verification
+func ResetPassword(c *gin.Context) {
+	var req ResetPasswordRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid request: "+err.Error())
+		return
+	}
+
+	// Find user by email
+	var user models.User
+	if result := database.DB.Where("email = ?", req.Email).First(&user); result.Error != nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "Email tidak ditemukan dalam sistem")
+		return
+	}
+
+	// Hash new password
+	hashedPassword, err := utils.HashPassword(req.NewPassword)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to process password")
+		return
+	}
+
+	// Update password
+	user.Password = hashedPassword
+	if result := database.DB.Save(&user); result.Error != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to update password")
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Password berhasil direset", nil)
+}

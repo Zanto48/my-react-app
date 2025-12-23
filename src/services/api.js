@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Use environment variable for production, fallback to localhost for development
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -74,6 +74,44 @@ export const recommendationsAPI = {
     getFood: () => api.get('/recommendations/food'),
     getExercise: () => api.get('/recommendations/exercise'),
     getEmotional: () => api.get('/recommendations/emotional'),
+    getDailyMenu: () => api.get('/recommendations/daily-menu'),
+};
+
+// Articles API
+export const articlesAPI = {
+    getAll: (category) => api.get('/articles', { params: { category } }),
+    getById: (id) => api.get(`/articles/${id}`),
+    getCategories: () => api.get('/articles/categories'),
+    search: (q) => api.get('/articles/search', { params: { q } }),
+};
+
+// Forum API
+export const forumAPI = {
+    getPosts: () => api.get('/forum/posts'),
+    createPost: (data) => api.post('/forum/posts', data),
+    getPost: (id) => api.get(`/forum/posts/${id}`),
+    deletePost: (id) => api.delete(`/forum/posts/${id}`),
+    addComment: (id, data) => api.post(`/forum/posts/${id}/comments`, data),
+    toggleLike: (id) => api.post(`/forum/posts/${id}/like`),
+};
+
+// Water Tracker API
+export const waterAPI = {
+    get: () => api.get('/water'),
+    addGlass: () => api.post('/water/add'),
+    removeGlass: () => api.post('/water/remove'),
+    updateGoal: (goal) => api.put('/water/goal', { goal }),
+    getHistory: () => api.get('/water/history'),
+};
+
+// Reminders API
+export const remindersAPI = {
+    getAll: () => api.get('/reminders'),
+    create: (data) => api.post('/reminders', data),
+    update: (id, data) => api.put(`/reminders/${id}`, data),
+    delete: (id) => api.delete(`/reminders/${id}`),
+    toggle: (id) => api.put(`/reminders/${id}/toggle`),
 };
 
 export default api;
+
