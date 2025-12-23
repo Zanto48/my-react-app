@@ -1,11 +1,11 @@
 package main
 
 import (
-	"log"
-
 	"health-tracker/config"
 	"health-tracker/database"
 	"health-tracker/routes"
+	"log"
+	"os" // <--- INI TAMBAHAN PENTING
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,7 +17,7 @@ func main() {
 	// Set Gin mode
 	gin.SetMode(config.AppConfig.GinMode)
 
-	// Initialize database
+	// Initialize database (Sekarang pakai Neon Postgres)
 	database.InitDatabase()
 
 	// Create Gin router
@@ -26,12 +26,23 @@ func main() {
 	// Setup routes
 	routes.SetupRoutes(r)
 
-	// Start server
-	log.Printf("🚀 Health Tracker API starting on port %s", config.AppConfig.Port)
-	log.Printf("📚 API endpoints available at http://localhost:%s/api", config.AppConfig.Port)
-	log.Printf("❤️  Health check at http://localhost:%s/health", config.AppConfig.Port)
+	// ========================================================
+	// PENYESUAIAN UNTUK RENDER.COM
+	// ========================================================
+	// Ambil PORT dari Environment Variable (disediakan Render)
+	port := os.Getenv("PORT")
+	if port == "" {
+		// Jika tidak ada (sedang di laptop), pakai port default dari config
+		port = config.AppConfig.Port
+		if port == "" {
+			port = "8080" // Default cadangan
+		}
+	}
 
-	if err := r.Run(":" + config.AppConfig.Port); err != nil {
+	log.Printf("🚀 Health Tracker API starting on port %s", port)
+
+	// Jalankan server di 0.0.0.0 (Wajib untuk Render)
+	if err := r.Run("0.0.0.0:" + port); err != nil {
 		log.Fatal("Failed to start server:", err)
 	}
 }
