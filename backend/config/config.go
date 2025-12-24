@@ -13,6 +13,7 @@ type Config struct {
 	JWTSecret      string
 	JWTExpiryHours int
 	DatabasePath   string
+	DatabaseURL    string
 }
 
 var AppConfig *Config
@@ -28,6 +29,7 @@ func LoadConfig() {
 		JWTSecret:      getEnv("JWT_SECRET", "default-secret-key"),
 		JWTExpiryHours: expiryHours,
 		DatabasePath:   getEnv("DATABASE_PATH", "./health_tracker.db"),
+		DatabaseURL:    getEnv("DATABASE_URL", ""),
 	}
 }
 
