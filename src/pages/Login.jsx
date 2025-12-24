@@ -10,7 +10,9 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const { login } = useAuth();
+    
+    // Kita ambil fungsi login dari AuthContext yang baru (Supabase)
+    const { login } = useAuth(); 
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -19,15 +21,32 @@ const Login = () => {
         setLoading(true);
 
         try {
-            await login(email, password);
+            // --- PERUBAHAN LOGIKA DI SINI (SUPABASE) ---
+            // Supabase mengembalikan object { data, error }
+            // Kita panggil fungsi login yang sudah kita buat di AuthContext
+            const { error } = await login(email, password);
+
+            // Jika Supabase membalas dengan error, kita lempar ke catch
+            if (error) throw error;
+
+            // Jika tidak ada error, berarti sukses! Lanjut ke dashboard
             navigate('/dashboard');
+            
         } catch (err) {
-            setError(err.response?.data?.error || 'Login failed. Please try again.');
+            // Supabase error biasanya ada di err.message
+            // Kita ubah pesan errornya biar lebih ramah user jika salah password
+            let message = err.message;
+            if (message === "Invalid login credentials") {
+                message = "Email atau Password salah.";
+            }
+            
+            setError(message || 'Login gagal. Silakan coba lagi.');
         } finally {
             setLoading(false);
         }
     };
 
+    // --- BAGIAN DI BAWAH INI SAMA PERSIS (TIDAK SAYA UBAH) ---
     return (
         <div className="auth-container">
             {/* Animated Background Elements */}

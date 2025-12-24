@@ -1,75 +1,51 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI } from '../services/api';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { supabase } from '../supabaseClient'; // Pastikan path ini benar sesuai file supabaseClient.js Anda
 
-const AuthContext = createContext(null);
+const AuthContext = createContext({});
 
-export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within AuthProvider');
-    }
-    return context;
-};
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        const savedUser = localStorage.getItem('user');
-
-        if (token && savedUser) {
-            setUser(JSON.parse(savedUser));
-            // Verify token is still valid
-            authAPI.getProfile()
-                .then((res) => {
-                    setUser(res.data.data);
-                    localStorage.setItem('user', JSON.stringify(res.data.data));
-                })
-                .catch(() => {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    setUser(null);
-                })
-                .finally(() => setLoading(false));
-        } else {
-            setLoading(false);
-        }
-    }, []);
-
-    const login = async (email, password) => {
-        const response = await authAPI.login({ email, password });
-        const { token, user } = response.data.data;
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-        setUser(user);
-        return user;
+  useEffect(() => {
+    // 1. Cek sesi saat ini
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setLoading(false);
     };
 
-    const register = async (email, password, name) => {
-        const response = await authAPI.register({ email, password, name });
-        const { token, user } = response.data.data;
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-        setUser(user);
-        return user;
-    };
+    checkUser();
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
-    };
+    // 2. Dengarkan jika ada yang login/logout
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
-    const updateUser = (userData) => {
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
-    };
+    return () => subscription.unsubscribe();
+  }, []);
 
-    return (
-        <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
-            {children}
-        </AuthContext.Provider>
-    );
+  // Fungsi Login
+  const login = (email, password) => {
+    return supabase.auth.signInWithPassword({ email, password });
+  };
+
+  // Fungsi Register
+  const register = (email, password) => {
+    return supabase.auth.signUp({ email, password });
+  };
+
+  // Fungsi Logout
+  const logout = () => {
+    return supabase.auth.signOut();
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
 };
