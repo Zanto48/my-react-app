@@ -2,39 +2,27 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext();
 
-export const useTheme = () => {
-    const context = useContext(ThemeContext);
-    if (!context) {
-        throw new Error('useTheme must be used within a ThemeProvider');
-    }
-    return context;
-};
+export const useTheme = () => useContext(ThemeContext);
 
 export const ThemeProvider = ({ children }) => {
+    // Cek local storage dulu, kalau tidak ada default ke Dark Mode (true)
     const [isDark, setIsDark] = useState(() => {
-        // Check localStorage first
         const saved = localStorage.getItem('theme');
-        if (saved) {
-            return saved === 'dark';
-        }
-        // Then check system preference
-        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        return saved ? JSON.parse(saved) : true; 
     });
 
+    const toggleTheme = () => setIsDark(prev => !prev);
+
     useEffect(() => {
-        // Apply theme to document
-        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        localStorage.setItem('theme', JSON.stringify(isDark));
+        // Update style body langsung
+        document.body.style.backgroundColor = isDark ? '#0f172a' : '#f8fafc';
+        document.body.style.color = isDark ? '#f8fafc' : '#1e293b';
     }, [isDark]);
 
-    const toggleTheme = () => setIsDark(prev => !prev);
-    const setTheme = (dark) => setIsDark(dark);
-
     return (
-        <ThemeContext.Provider value={{ isDark, toggleTheme, setTheme }}>
+        <ThemeContext.Provider value={{ isDark, toggleTheme }}>
             {children}
         </ThemeContext.Provider>
     );
 };
-
-export default ThemeProvider;

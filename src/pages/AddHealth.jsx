@@ -1,184 +1,74 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { healthAPI } from '../services/api';
-import {
-    ArrowLeft, Scale, Ruler, Activity, Smile,
-    FileText, Loader2, Check
-} from 'lucide-react';
-import './AddHealth.css';
+import { Activity, Smile, Save, ArrowLeft } from 'lucide-react';
+import './Auth.css'; // Reuse CSS agar konsisten
 
 const AddHealth = () => {
     const navigate = useNavigate();
+    const [weight, setWeight] = useState('');
+    const [mood, setMood] = useState('happy');
     const [loading, setLoading] = useState(false);
-    const [success, setSuccess] = useState(false);
-
-    const [formData, setFormData] = useState({
-        heightCm: '',
-        weightKg: '',
-        activityLevel: 'sedentary',
-        emotionalState: 'neutral',
-        notes: '',
-    });
-
-    const activityLevels = [
-        { value: 'sedentary', label: 'Tidak Aktif' },
-        { value: 'light', label: 'Ringan' },
-        { value: 'moderate', label: 'Sedang' },
-        { value: 'active', label: 'Aktif' },
-    ];
-
-    const emotionalStates = [
-        { value: 'happy', label: '😊 Bahagia' },
-        { value: 'neutral', label: '😐 Biasa' },
-        { value: 'stressed', label: '😰 Stres' },
-        { value: 'anxious', label: '😟 Cemas' },
-        { value: 'sad', label: '😢 Sedih' },
-    ];
-
-    const handleChange = (field, value) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-
         try {
-            await healthAPI.create({
-                height_cm: parseFloat(formData.heightCm),
-                weight_kg: parseFloat(formData.weightKg),
-                activity_level: formData.activityLevel,
-                emotional_state: formData.emotionalState,
-                notes: formData.notes,
+            await healthAPI.addLog({
+                weight: parseFloat(weight),
+                emotional_state: mood
             });
-
-            setSuccess(true);
-            setTimeout(() => {
-                navigate('/dashboard');
-            }, 1500);
-        } catch (err) {
-            console.error('Failed to save health data:', err);
+            alert('Data berhasil disimpan!');
+            navigate('/dashboard');
+        } catch (error) {
+            alert('Gagal menyimpan data');
         } finally {
             setLoading(false);
         }
     };
 
-    const bmi = formData.heightCm && formData.weightKg
-        ? (parseFloat(formData.weightKg) / Math.pow(parseFloat(formData.heightCm) / 100, 2)).toFixed(1)
-        : null;
-
     return (
-        <div className="add-health-page">
-            {/* Animated Health Background */}
-            <div className="health-bg-elements">
-                {/* Floating Health Icons */}
-                <div className="health-particle">❤️</div>
-                <div className="health-particle">💪</div>
-                <div className="health-particle">🏃</div>
-                <div className="health-particle">🍎</div>
-                <div className="health-particle">💧</div>
-                <div className="health-particle">🧘</div>
-                {/* Pulse Rings */}
-                <div className="health-pulse"></div>
-                <div className="health-pulse"></div>
-                <div className="health-pulse"></div>
-            </div>
-
-            <header className="page-header">
-                <Link to="/dashboard" className="back-btn">
-                    <ArrowLeft size={20} />
-                </Link>
-                <h1>Tambah Data Kesehatan</h1>
-            </header>
-
-            <div className="add-health-container">
-                <form onSubmit={handleSubmit}>
-                    <div className="form-section">
-                        <h3><Scale size={18} /> Data Fisik</h3>
-
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label>Tinggi Badan (cm)</label>
-                                <input
-                                    type="number"
-                                    placeholder="170"
-                                    value={formData.heightCm}
-                                    onChange={(e) => handleChange('heightCm', e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>Berat Badan (kg)</label>
-                                <input
-                                    type="number"
-                                    placeholder="65"
-                                    value={formData.weightKg}
-                                    onChange={(e) => handleChange('weightKg', e.target.value)}
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        {bmi && (
-                            <div className="bmi-preview">
-                                <span>BMI:</span>
-                                <strong>{bmi}</strong>
-                            </div>
-                        )}
+        <div className="auth-container">
+            <div className="auth-card">
+                <div className="auth-header" style={{ textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666' }}>
+                        <ArrowLeft />
+                    </button>
+                    <div>
+                        <h2 style={{ marginBottom: 0 }}>Catat Kesehatan</h2>
+                        <p style={{ margin: 0 }}>Update kondisi harianmu</p>
                     </div>
+                </div>
 
-                    <div className="form-section">
-                        <h3><Activity size={18} /> Tingkat Aktivitas</h3>
-                        <div className="option-row">
-                            {activityLevels.map((level) => (
-                                <button
-                                    key={level.value}
-                                    type="button"
-                                    className={`option-btn ${formData.activityLevel === level.value ? 'selected' : ''}`}
-                                    onClick={() => handleChange('activityLevel', level.value)}
-                                >
-                                    {level.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="form-section">
-                        <h3><Smile size={18} /> Kondisi Emosional</h3>
-                        <div className="emotion-row">
-                            {emotionalStates.map((state) => (
-                                <button
-                                    key={state.value}
-                                    type="button"
-                                    className={`emotion-btn ${formData.emotionalState === state.value ? 'selected' : ''}`}
-                                    onClick={() => handleChange('emotionalState', state.value)}
-                                >
-                                    {state.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="form-section">
-                        <h3><FileText size={18} /> Catatan (Opsional)</h3>
-                        <textarea
-                            placeholder="Catatan tambahan tentang kondisi Anda hari ini..."
-                            value={formData.notes}
-                            onChange={(e) => handleChange('notes', e.target.value)}
-                            rows={3}
+                <form onSubmit={handleSubmit} className="auth-form">
+                    <div className="input-group">
+                        <Activity className="input-icon" />
+                        <input 
+                            type="number" 
+                            placeholder="Berat Badan (kg)" 
+                            value={weight}
+                            onChange={(e) => setWeight(e.target.value)}
+                            required
                         />
                     </div>
 
-                    <button type="submit" className="submit-btn" disabled={loading || success}>
-                        {loading ? (
-                            <Loader2 className="spinner" />
-                        ) : success ? (
-                            <>
-                                <Check size={20} /> Tersimpan!
-                            </>
-                        ) : (
-                            'Simpan Data'
-                        )}
+                    <div className="input-group">
+                        <Smile className="input-icon" />
+                        <select 
+                            value={mood} 
+                            onChange={(e) => setMood(e.target.value)}
+                            style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #ddd' }}
+                        >
+                            <option value="happy">😊 Bahagia</option>
+                            <option value="neutral">😐 Biasa Saja</option>
+                            <option value="sad">😔 Sedih</option>
+                            <option value="stressed">😫 Stres</option>
+                            <option value="anxious">😰 Cemas</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" className="auth-button" disabled={loading}>
+                        {loading ? 'Menyimpan...' : 'Simpan Data'}
                     </button>
                 </form>
             </div>

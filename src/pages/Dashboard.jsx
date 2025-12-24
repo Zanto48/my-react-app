@@ -1,366 +1,100 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
-import { healthAPI, symptomsAPI, remindersAPI } from '../services/api';
+import { useTheme } from '../contexts/ThemeContext'; // Import Tema
+import { healthAPI, remindersAPI } from '../services/api'; // Import API
 import {
-    Heart, Activity, Utensils, Dumbbell, Users, Brain,
-    TrendingUp, AlertCircle, Calendar, LogOut, Plus, ChevronRight, X,
-    Droplets, Coffee, Moon, Sun, Wind, Bell, Clock, Smile, Frown, Meh,
-    AlertTriangle, CheckCircle, History, BarChart3, Edit3, Trash2
+    Heart, Activity, Bell, LogOut, Sun, Moon, 
+    CheckCircle, AlertTriangle, Plus, Clock, Smile, Frown, Meh,
+    Brain, Utensils, Users, ChevronRight, Droplets, Coffee, Dumbbell
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import './Dashboard.css';
 
 const Dashboard = () => {
     const { user, logout } = useAuth();
     const { isDark, toggleTheme } = useTheme();
     const navigate = useNavigate();
-    const [dashboard, setDashboard] = useState(null);
+    
+    // State Data
+    const [stats, setStats] = useState({ healthScore: 0, bmi: 0, bmiCategory: '-', mood: 'neutral' });
     const [graphData, setGraphData] = useState([]);
+    const [reminders, setReminders] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [showSymptomsModal, setShowSymptomsModal] = useState(false);
-    const [showHistoryModal, setShowHistoryModal] = useState(false);
-    const [showRemindersPanel, setShowRemindersPanel] = useState(false);
-    const [graphPeriod, setGraphPeriod] = useState('week');
-    const [symptomHistory, setSymptomHistory] = useState([]);
-    const [healthAlerts, setHealthAlerts] = useState([]);
 
-    // Default reminder templates
-    const defaultReminders = [
-        { id: 'default-1', type: 'water', label: 'Minum Air Pagi', time: '07:00', is_active: true },
-        { id: 'default-2', type: 'meal', label: 'Sarapan Sehat', time: '07:30', is_active: true },
-        { id: 'default-3', type: 'exercise', label: 'Olahraga Pagi', time: '06:00', is_active: true },
-        { id: 'default-4', type: 'meditation', label: 'Meditasi', time: '06:30', is_active: true },
-        { id: 'default-5', type: 'water', label: 'Minum Air Siang', time: '12:00', is_active: true },
-        { id: 'default-6', type: 'meal', label: 'Makan Siang', time: '12:30', is_active: true },
-        { id: 'default-7', type: 'rest', label: 'Istirahat Siang', time: '13:00', is_active: true },
-        { id: 'default-8', type: 'water', label: 'Minum Air Sore', time: '16:00', is_active: true },
-        { id: 'default-9', type: 'meal', label: 'Makan Malam', time: '19:00', is_active: true },
-        { id: 'default-10', type: 'rest', label: 'Persiapan Tidur', time: '21:00', is_active: true },
-    ];
-
-    // Health Reminders State - start with default templates
-    const [reminders, setReminders] = useState(defaultReminders);
-    const [showReminderModal, setShowReminderModal] = useState(false);
-    const [editingReminder, setEditingReminder] = useState(null);
-    const [reminderForm, setReminderForm] = useState({
-        type: 'water',
-        label: '',
-        time: '08:00'
-    });
-    const [reminderLoading, setReminderLoading] = useState(false);
-
+    // Load Data saat aplikasi dibuka
     useEffect(() => {
-        loadDashboard();
-        loadSymptomHistory();
-        loadReminders();
+        const loadAllData = async () => {
+            try {
+                // Ambil data dashboard
+                const dashRes = await healthAPI.getDashboard();
+                setStats(dashRes.data.data);
+
+                // Ambil data grafik
+                const graphRes = await healthAPI.getGraph();
+                setGraphData(graphRes.data.data);
+
+                // Ambil data pengingat
+                const remRes = await remindersAPI.getAll();
+                setReminders(remRes.data.data);
+            } catch (error) {
+                console.error("Error loading data", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadAllData();
     }, []);
 
-    useEffect(() => {
-        loadGraphData(graphPeriod);
-    }, [graphPeriod]);
-
-    const loadDashboard = async () => {
-        try {
-            const dashRes = await healthAPI.getDashboard();
-            setDashboard(dashRes.data.data);
-            analyzeHealthPatterns(dashRes.data.data);
-        } catch (err) {
-            console.error('Failed to load dashboard:', err);
-        } finally {
-            setLoading(false);
-        }
+    const handleToggleReminder = async (id) => {
+        // Update UI duluan biar cepat (Optimistic Update)
+        setReminders(prev => prev.map(r => r.id === id ? { ...r, is_active: !r.is_active } : r));
+        // Simpan ke storage
+        await remindersAPI.toggle(id);
     };
 
-    const loadGraphData = async (period) => {
-        try {
-            const graphRes = await healthAPI.getGraph(period);
-            setGraphData(graphRes.data.data || []);
-        } catch (err) {
-            console.error('Failed to load graph data:', err);
-        }
-    };
-
-    const loadSymptomHistory = async () => {
-        try {
-            const res = await symptomsAPI.getHistory();
-            setSymptomHistory(res.data.data || []);
-        } catch (err) {
-            console.error('Failed to load symptom history:', err);
-        }
-    };
-
-    const analyzeHealthPatterns = (data) => {
-        const alerts = [];
-        const symptoms = data?.recent_symptoms || [];
-
-        const stressSymptoms = symptoms.filter(s =>
-            s.symptom_name?.toLowerCase().includes('stres') ||
-            s.symptom_name?.toLowerCase().includes('cemas')
-        );
-        if (stressSymptoms.length >= 3) {
-            alerts.push({
-                type: 'warning',
-                title: 'Pola Stres Terdeteksi',
-                message: 'Anda mengalami stres berulang. Pertimbangkan konsultasi dengan psikolog.',
-                priority: 'high'
-            });
-        }
-
-        const sleepSymptoms = symptoms.filter(s =>
-            s.symptom_name?.toLowerCase().includes('tidur') ||
-            s.symptom_name?.toLowerCase().includes('insomnia')
-        );
-        if (sleepSymptoms.length >= 2) {
-            alerts.push({
-                type: 'warning',
-                title: 'Gangguan Tidur Berkepanjangan',
-                message: 'Pola tidur Anda terganggu. Hindari kafein malam hari dan coba teknik relaksasi.',
-                priority: 'high'
-            });
-        }
-
-        const physicalSymptoms = symptoms.filter(s => s.symptom_type === 'physical');
-        if (physicalSymptoms.length >= 4) {
-            alerts.push({
-                type: 'danger',
-                title: 'Banyak Gejala Fisik',
-                message: 'Anda memiliki beberapa gejala fisik. Sangat disarankan untuk konsultasi ke dokter.',
-                priority: 'critical'
-            });
-        }
-
-        const healthScore = data?.health_score || 0;
-        if (healthScore < 60) {
-            alerts.push({
-                type: 'info',
-                title: 'Skor Kesehatan Perlu Perhatian',
-                message: 'Skor kesehatan Anda di bawah optimal. Fokus pada pola makan, olahraga, dan istirahat.',
-                priority: 'medium'
-            });
-        }
-
-        setHealthAlerts(alerts);
-    };
-
-    const loadReminders = async () => {
-        try {
-            const res = await remindersAPI.getAll();
-            if (res.data.data && res.data.data.length > 0) {
-                setReminders(res.data.data);
-            }
-        } catch (err) {
-            console.error('Failed to load reminders, using default templates:', err);
-        }
-    };
-
-    const toggleReminder = async (id) => {
-        const isDefaultTemplate = String(id).startsWith('default-');
-
-        if (isDefaultTemplate) {
-            setReminders(reminders.map(r =>
-                r.id === id ? { ...r, is_active: !r.is_active } : r
-            ));
-        } else {
-            try {
-                await remindersAPI.toggle(id);
-                setReminders(reminders.map(r =>
-                    r.id === id ? { ...r, is_active: !r.is_active } : r
-                ));
-            } catch (err) {
-                console.error('Failed to toggle reminder:', err);
-            }
-        }
-    };
-
-    const getReminderIcon = (type) => {
-        const icons = {
-            water: Droplets,
-            meal: Coffee,
-            exercise: Dumbbell,
-            meditation: Wind,
-            rest: Moon,
-            custom: Bell
-        };
-        return icons[type] || Bell;
-    };
-
-    const openAddReminderModal = () => {
-        setEditingReminder(null);
-        setReminderForm({ type: 'water', label: '', time: '08:00' });
-        setShowReminderModal(true);
-    };
-
-    const openEditReminderModal = (reminder) => {
-        setEditingReminder(reminder);
-        setReminderForm({
-            type: reminder.type,
-            label: reminder.label,
-            time: reminder.time
-        });
-        setShowReminderModal(true);
-    };
-
-    const closeReminderModal = () => {
-        setShowReminderModal(false);
-        setEditingReminder(null);
-        setReminderForm({ type: 'water', label: '', time: '08:00' });
-    };
-
-    const handleSaveReminder = async (e) => {
-        e.preventDefault();
-        if (!reminderForm.label.trim()) return;
-
-        setReminderLoading(true);
-        try {
-            if (editingReminder) {
-                await remindersAPI.update(editingReminder.id, reminderForm);
-            } else {
-                await remindersAPI.create(reminderForm);
-            }
-            await loadReminders();
-            closeReminderModal();
-        } catch (err) {
-            console.error('Failed to save reminder:', err);
-        } finally {
-            setReminderLoading(false);
-        }
-    };
-
-    const handleDeleteReminder = async (id) => {
-        if (!window.confirm('Hapus pengingat ini?')) return;
-        const isDefaultTemplate = String(id).startsWith('default-');
-
-        if (isDefaultTemplate) {
-            setReminders(reminders.filter(r => r.id !== id));
-        } else {
-            try {
-                await remindersAPI.delete(id);
-                setReminders(reminders.filter(r => r.id !== id));
-            } catch (err) {
-                console.error('Failed to delete reminder:', err);
-            }
-        }
-    };
-
-    const handleLogout = () => {
-        logout();
+    const handleLogout = async () => {
+        await logout();
         navigate('/login');
     };
 
-    const getBMIColor = (category) => {
-        switch (category) {
-            case 'Underweight': return '#f59e0b';
-            case 'Normal': return '#10b981';
-            case 'Overweight': return '#f59e0b';
-            case 'Obese': return '#ef4444';
-            default: return '#64748b';
-        }
-    };
+    const getDisplayName = () => user?.user_metadata?.full_name || 'User';
 
-    const getScoreColor = (score) => {
-        if (score >= 80) return '#10b981';
-        if (score >= 60) return '#f59e0b';
-        return '#ef4444';
-    };
-
+    // Helper Styles & Icons
+    const getScoreColor = (score) => score >= 80 ? '#10b981' : score > 0 ? '#f59e0b' : '#64748b';
     const getMoodIcon = (mood) => {
-        switch (mood) {
-            case 'happy': return <Smile className="mood-icon happy" />;
-            case 'sad': return <Frown className="mood-icon sad" />;
-            case 'stressed':
-            case 'anxious': return <Heart className="mood-icon stressed" />;
-            default: return <Meh className="mood-icon neutral" />;
-        }
+        if (mood === 'happy') return <Smile className="mood-icon happy" />;
+        if (mood === 'sad') return <Frown className="mood-icon sad" />;
+        return <Meh className="mood-icon neutral" />;
+    };
+    const getReminderIcon = (type) => {
+        if(type === 'water') return Droplets;
+        if(type === 'exercise') return Dumbbell;
+        if(type === 'meal') return Coffee;
+        return Bell;
     };
 
-    const getMoodLabel = (mood) => {
-        switch (mood) {
-            case 'happy': return 'Bahagia';
-            case 'sad': return 'Sedih';
-            case 'stressed': return 'Stres';
-            case 'anxious': return 'Cemas';
-            case 'neutral': return 'Netral';
-            default: return 'Tidak diketahui';
-        }
-    };
-
-    const getCompletedReminders = () => reminders.filter(r => !r.is_active).length;
-
-    const getDisplayName = () => {
-        if (!user) return 'User';
-        return user.user_metadata?.full_name || 
-               user.user_metadata?.name || 
-               (user.email ? user.email.split('@')[0] : 'User');
-    };
-
-    if (loading) {
-        return (
-            <div className="dashboard-loading">
-                <Heart className="loading-icon" />
-                <p>Memuat dashboard...</p>
-            </div>
-        );
-    }
-
-    const bmi = dashboard?.latest_health?.bmi || 0;
-    const bmiCategory = dashboard?.bmi_category || 'Unknown';
-    const healthScore = dashboard?.health_score || 0;
-    const emotionalState = dashboard?.latest_health?.emotional_state || 'neutral';
+    if (loading) return <div style={{padding: 50, textAlign: 'center'}}>Memuat Dashboard...</div>;
 
     return (
-        <div className="dashboard">
-            <div className="dashboard-bg-elements">
-                <div className="dash-particle"></div><div className="dash-particle"></div>
-                <div className="dash-particle"></div><div className="dash-particle"></div>
-                <div className="dash-particle"></div><div className="dash-particle"></div>
-                <div className="dash-particle"></div><div className="dash-particle"></div>
-                <div className="dash-glow-orb"></div><div className="dash-glow-orb"></div>
-                <div className="dash-glow-orb"></div><div className="dash-star"></div>
-                <div className="dash-star"></div><div className="dash-star"></div>
-                <div className="dash-star"></div><div className="dash-hexagon"></div>
-                <div className="dash-hexagon"></div><div className="dash-line"></div>
-            </div>
-
-            <nav className="dashboard-nav">
+        <div className="dashboard" style={{ minHeight: '100vh', transition: 'background 0.3s' }}>
+            <nav className="dashboard-nav" style={{ background: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)' }}>
                 <div className="nav-brand">
-                    <Heart className="nav-logo" />
+                    <Heart className="nav-logo" color="#10b981" fill="#10b981" />
                     <span>Live for Health</span>
                 </div>
                 <div className="nav-user">
-                    <button className="theme-toggle-btn" onClick={toggleTheme}>
+                    <button className="theme-toggle-btn" onClick={toggleTheme} style={{ color: isDark ? '#fff' : '#333' }}>
                         {isDark ? <Sun size={18} /> : <Moon size={18} />}
                     </button>
-                    <button className="reminder-btn" onClick={() => setShowRemindersPanel(!showRemindersPanel)}>
-                        <Bell size={18} />
-                        <span className="reminder-badge">{reminders.length - getCompletedReminders()}</span>
-                    </button>
-                    <Link to="/profile" className="profile-link">
+                    <Link to="/profile" className="profile-link" style={{ color: isDark ? '#fff' : '#333' }}>
                         <span>Halo, {getDisplayName()}</span>
                     </Link>
-                    <button className="logout-btn" onClick={handleLogout}>
+                    <button className="logout-btn" onClick={handleLogout} style={{ color: '#ef4444' }}>
                         <LogOut size={18} />
                     </button>
                 </div>
             </nav>
-
-            {healthAlerts.length > 0 && (
-                <div className="health-alerts-banner">
-                    {healthAlerts.map((alert, idx) => (
-                        <div key={idx} className={`alert-item alert-${alert.type}`}>
-                            <AlertTriangle size={18} />
-                            <div className="alert-content">
-                                <strong>{alert.title}</strong>
-                                <p>{alert.message}</p>
-                            </div>
-                            <button onClick={() => setHealthAlerts(healthAlerts.filter((_, i) => i !== idx))}>
-                                <X size={16} />
-                            </button>
-                        </div>
-                    ))}
-                </div>
-            )}
 
             <div className="dashboard-content">
                 <header className="dashboard-header">
@@ -369,236 +103,87 @@ const Dashboard = () => {
                         <p>Pantau kesehatan fisik & mental Anda setiap hari</p>
                     </div>
                     <div className="header-actions">
-                        <button className="history-btn" onClick={() => setShowHistoryModal(true)}>
-                            <History size={18} /> Riwayat
-                        </button>
                         <Link to="/health/add" className="add-btn">
                             <Plus size={20} /> Tambah Data
                         </Link>
                     </div>
                 </header>
 
+                {/* STATS */}
                 <div className="stats-grid">
-                    <div className="stat-card health-score">
-                        <div className="stat-icon" style={{ background: getScoreColor(healthScore) }}>
-                            <Heart />
-                        </div>
+                    <div className="stat-card">
+                        <div className="stat-icon" style={{ background: getScoreColor(stats.health_score) }}><Heart /></div>
                         <div className="stat-info">
                             <span className="stat-label">Skor Kesehatan</span>
-                            <span className="stat-value" style={{ color: getScoreColor(healthScore) }}>{healthScore}</span>
-                        </div>
-                        <div className="score-ring" style={{ '--score': healthScore }}>
-                            <svg viewBox="0 0 36 36">
-                                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke={getScoreColor(healthScore)} strokeWidth="3" strokeDasharray={`${healthScore}, 100`} />
-                            </svg>
+                            <span className="stat-value" style={{ color: getScoreColor(stats.health_score) }}>{stats.health_score}</span>
                         </div>
                     </div>
-
-                    <div className="stat-card bmi-card">
-                        <div className="stat-icon" style={{ background: getBMIColor(bmiCategory) }}>
-                            <Activity />
-                        </div>
+                    <div className="stat-card">
+                        <div className="stat-icon" style={{ background: '#3b82f6' }}><Activity /></div>
                         <div className="stat-info">
                             <span className="stat-label">BMI</span>
-                            <span className="stat-value">{bmi.toFixed(1)}</span>
-                            <span className="stat-category" style={{ color: getBMIColor(bmiCategory) }}>{bmiCategory}</span>
+                            <span className="stat-value">{stats.bmi}</span>
+                            <span className="stat-category">{stats.bmi_category}</span>
                         </div>
                     </div>
-
-                    <div className="stat-card mood-card">
-                        <div className="stat-icon mood-icon-bg">{getMoodIcon(emotionalState)}</div>
+                    <div className="stat-card">
+                        <div className="stat-icon" style={{ background: '#8b5cf6' }}>{getMoodIcon(stats.mood)}</div>
                         <div className="stat-info">
-                            <span className="stat-label">Suasana Hati</span>
-                            <span className="stat-value mood-value">{getMoodLabel(emotionalState)}</span>
+                            <span className="stat-label">Mood</span>
+                            <span className="stat-value" style={{textTransform: 'capitalize'}}>{stats.mood}</span>
                         </div>
-                    </div>
-
-                    <div className="stat-card symptoms-card-clickable" onClick={() => setShowSymptomsModal(true)}>
-                        <div className="stat-icon symptoms-icon"><AlertCircle /></div>
-                        <div className="stat-info">
-                            <span className="stat-label">Gejala Minggu Ini</span>
-                            <span className="stat-value">{dashboard?.recent_symptoms?.length || 0}</span>
-                        </div>
-                        <ChevronRight size={20} className="stat-chevron" />
                     </div>
                 </div>
 
+                {/* CHART */}
                 <div className="charts-section">
                     <div className="chart-card wide">
-                        <div className="card-header">
-                            <h3><BarChart3 size={20} /> Perkembangan Kesehatan</h3>
-                            <div className="period-toggle">
-                                <button className={graphPeriod === 'week' ? 'active' : ''} onClick={() => setGraphPeriod('week')}>Mingguan</button>
-                                <button className={graphPeriod === 'month' ? 'active' : ''} onClick={() => setGraphPeriod('month')}>Bulanan</button>
-                            </div>
+                        <h3><Activity size={20} style={{marginRight: 10}}/> Grafik Berat Badan</h3>
+                        <div style={{ width: '100%', height: 250, marginTop: 20 }}>
+                            {graphData.length > 0 ? (
+                                <ResponsiveContainer>
+                                    <AreaChart data={graphData}>
+                                        <defs>
+                                            <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                            </linearGradient>
+                                        </defs>
+                                        <XAxis dataKey="date" stroke="#94a3b8" />
+                                        <YAxis domain={['auto', 'auto']} stroke="#94a3b8" />
+                                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }} />
+                                        <Area type="monotone" dataKey="weight" stroke="#10b981" fillOpacity={1} fill="url(#colorWeight)" />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="empty-chart">Belum ada data. Klik "Tambah Data" untuk memulai.</div>
+                            )}
                         </div>
-                        {graphData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height={220}>
-                                <AreaChart data={graphData}>
-                                    <defs>
-                                        <linearGradient id="weightGradient" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <XAxis dataKey="date" tickFormatter={(d) => d.split('-').slice(1).join('/')} stroke="#94a3b8" />
-                                    <YAxis domain={['auto', 'auto']} stroke="#94a3b8" />
-                                    <Tooltip contentStyle={{ background: 'rgba(255,255,255,0.95)', border: '1px solid #10b981', borderRadius: '12px' }} />
-                                    <Area type="monotone" dataKey="weight" stroke="#10b981" strokeWidth={3} fill="url(#weightGradient)" dot={{ fill: '#10b981', r: 4 }} name="Berat (kg)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="empty-chart"><Calendar size={40} /><p>Belum ada data untuk periode ini</p></div>
-                        )}
                     </div>
                 </div>
 
+                {/* REMINDERS */}
                 <div className="dashboard-grid">
                     <div className="reminders-card">
                         <div className="card-header">
                             <h3><Bell size={20} /> Pengingat Hari Ini</h3>
-                            <div className="reminder-header-actions">
-                                <span className="reminder-progress">{getCompletedReminders()}/{reminders.length} selesai</span>
-                                <button className="add-reminder-btn" onClick={openAddReminderModal}><Plus size={16} /></button>
-                            </div>
                         </div>
                         <div className="reminders-list">
-                            {reminders.slice(0, 5).map(reminder => {
-                                const IconComponent = getReminderIcon(reminder.type);
+                            {reminders.map(r => {
+                                const Icon = getReminderIcon(r.type);
                                 return (
-                                    <div key={reminder.id} className={`reminder-item ${!reminder.is_active ? 'done' : ''}`}>
-                                        <div className="reminder-check" onClick={() => toggleReminder(reminder.id)}>
-                                            {!reminder.is_active ? <CheckCircle size={18} /> : <div className="check-circle" />}
-                                        </div>
-                                        <IconComponent size={18} className="reminder-type-icon" />
-                                        <span className="reminder-label">{reminder.label}</span>
-                                        <span className="reminder-time"><Clock size={12} /> {reminder.time}</span>
-                                        <div className="reminder-actions">
-                                            <button className="reminder-edit-btn" onClick={(e) => { e.stopPropagation(); openEditReminderModal(reminder); }}><Edit3 size={14} /></button>
-                                            <button className="reminder-delete-btn" onClick={(e) => { e.stopPropagation(); handleDeleteReminder(reminder.id); }}><Trash2 size={14} /></button>
-                                        </div>
+                                    <div key={r.id} className={`reminder-item ${!r.is_active ? 'done' : ''}`} onClick={() => handleToggleReminder(r.id)}>
+                                        <div className="reminder-check">{!r.is_active ? <CheckCircle color="#10b981"/> : <div className="check-circle"/>}</div>
+                                        <Icon className="reminder-type-icon" size={18}/>
+                                        <span className="reminder-label">{r.label}</span>
+                                        <span className="reminder-time"><Clock size={12}/> {r.time}</span>
                                     </div>
-                                );
+                                )
                             })}
                         </div>
-                        <button className="see-all-btn" onClick={() => setShowRemindersPanel(true)}>Lihat Semua Pengingat</button>
-                    </div>
-
-                    <div className="quick-actions">
-                        <h3>Menu Cepat</h3>
-                        <div className="action-list">
-                            <Link to="/symptoms" className="action-item"><Brain className="action-icon" /><span>Log Gejala</span><ChevronRight size={18} /></Link>
-                            <Link to="/recommendations/food" className="action-item"><Utensils className="action-icon food" /><span>Rekomendasi Makanan</span><ChevronRight size={18} /></Link>
-                            <Link to="/recommendations/exercise" className="action-item"><Dumbbell className="action-icon exercise" /><span>Rekomendasi Olahraga</span><ChevronRight size={18} /></Link>
-                            <Link to="/recommendations/emotional" className="action-item"><Heart className="action-icon emotional" /><span>Aktivitas Emosional</span><ChevronRight size={18} /></Link>
-                            <Link to="/family" className="action-item"><Users className="action-icon family" /><span>Keluarga</span><ChevronRight size={18} /></Link>
-                        </div>
                     </div>
                 </div>
-
-                {dashboard?.recommendations?.length > 0 && (
-                    <div className="recommendations-preview">
-                        <h3>💡 Rekomendasi untuk Anda</h3>
-                        <div className="rec-list">
-                            {dashboard.recommendations.map((rec, idx) => (
-                                <div key={idx} className={`rec-card priority-${rec.priority}`}>
-                                    <h4>{rec.title}</h4>
-                                    <p>{rec.description}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
             </div>
-
-            {/* Modals */}
-            {showSymptomsModal && (
-                <div className="symptoms-modal-overlay" onClick={() => setShowSymptomsModal(false)}>
-                    <div className="symptoms-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="symptoms-modal-header">
-                            <h2><AlertCircle size={24} /> Gejala Minggu Ini</h2>
-                            <button className="symptoms-modal-close" onClick={() => setShowSymptomsModal(false)}><X size={24} /></button>
-                        </div>
-                        <div className="symptoms-modal-content">
-                            {dashboard?.recent_symptoms?.length > 0 ? (
-                                <div className="symptoms-list">
-                                    {dashboard.recent_symptoms.map((symptom, idx) => (
-                                        <div key={idx} className="symptom-item">
-                                            <div className="symptom-info">
-                                                <span className="symptom-name">{symptom.symptom_name}</span>
-                                                <span className="symptom-date">{new Date(symptom.logged_at).toLocaleDateString()}</span>
-                                            </div>
-                                            <span className="symptom-severity">Tk. {symptom.severity}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : <div className="symptoms-empty"><p>Tidak ada gejala.</p></div>}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showHistoryModal && (
-                <div className="symptoms-modal-overlay" onClick={() => setShowHistoryModal(false)}>
-                    <div className="symptoms-modal history-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="symptoms-modal-header">
-                            <h2><History size={24} /> Riwayat Kesehatan</h2>
-                            <button onClick={() => setShowHistoryModal(false)}><X size={24} /></button>
-                        </div>
-                        <div className="symptoms-modal-content">
-                            <div className="history-stats">
-                                <div className="history-stat-item"><span className="stat-number">{dashboard?.total_records || 0}</span><span className="stat-desc">Records</span></div>
-                                <div className="history-stat-item"><span className="stat-number">{symptomHistory?.length || 0}</span><span className="stat-desc">Gejala</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showRemindersPanel && (
-                <div className="reminders-panel-overlay" onClick={() => setShowRemindersPanel(false)}>
-                    <div className="reminders-panel" onClick={(e) => e.stopPropagation()}>
-                        <div className="reminders-panel-header">
-                            <h2>Pengingat</h2>
-                            <button onClick={() => setShowRemindersPanel(false)}><X size={24} /></button>
-                        </div>
-                        <div className="reminders-panel-content">
-                            {reminders.map(r => (
-                                <div key={r.id} className="reminder-item" onClick={() => toggleReminder(r.id)}>
-                                    {r.is_active ? <div className="check-circle" /> : <CheckCircle size={16} />}
-                                    <span>{r.label}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showReminderModal && (
-                <div className="reminder-modal-overlay" onClick={closeReminderModal}>
-                    <div className="reminder-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="reminder-modal-header">
-                            <h2>{editingReminder ? 'Edit' : 'Tambah'} Pengingat</h2>
-                            <button onClick={closeReminderModal}><X size={24} /></button>
-                        </div>
-                        <form onSubmit={handleSaveReminder} className="reminder-modal-form">
-                            <div className="form-group">
-                                <label>Label</label>
-                                <input value={reminderForm.label} onChange={(e) => setReminderForm({ ...reminderForm, label: e.target.value })} required />
-                            </div>
-                            <div className="form-group">
-                                <label>Waktu</label>
-                                <input type="time" value={reminderForm.time} onChange={(e) => setReminderForm({ ...reminderForm, time: e.target.value })} required />
-                            </div>
-                            <div className="reminder-modal-actions">
-                                <button type="button" onClick={closeReminderModal} className="cancel-btn">Batal</button>
-                                <button type="submit" className="save-btn">{reminderLoading ? '...' : 'Simpan'}</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
